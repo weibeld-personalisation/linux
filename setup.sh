@@ -52,6 +52,7 @@ msg-bare() { __print "$1" "$2"; }
 err() { __print "ERROR\n$1\n" red; exit 1; }
 is-installed() { which "$1" &>/dev/null; }
 is-root() { [[ "$UID" = 0 ]]; }
+has-cached-sudo-password() { sudo -n true 2>/dev/null; }
 run() { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
 run-root() { is-root && run "$*" || run "sudo $*"; }
 run-apt() { run-root apt -o Acquire::http::Timeout=5 -o APT::Update::Error-Mode=any -o APT::Get::Assume-Yes=true "$@"; }
@@ -107,15 +108,20 @@ ack-sub
 # Get user password for root access
 #------------------------------------------------------------------------------#
 
-msg "Enabling root access..."
+msg "Checking root access..."
 if ! is-root; then
-  msg-sub "Please enter your user password:\n"
-  run-root -k echo -n
-  ack-sub
+  if ! has-cached-sudo-password; then
+    msg-sub "Please enter your user password:\n"
+    sudo true
+  else
+    msg-sub "Sudo password already cached or not needed: "
+    # Extend validity of cached password to prevent expiration in this script
+    sudo -v
+  fi
 else
   msg-sub "User is already root: "
-  ack-sub
 fi
+ack-sub
 
 #------------------------------------------------------------------------------#
 # Install packages
@@ -185,8 +191,13 @@ ack-sub
 
 msg "Installing custom sudoers file..."
 if ! is-root; then
-  msg-sub "Creating /etc/sudoers.d/config: "
-  run 'curl -s https://raw.githubusercontent.com/weibeld/sudoers/main/linux | DATE=$(date -Iseconds) envsubst | sudo tee /etc/sudoers.d/config >/dev/null'
+  file=/etc/sudoers.d/config
+  if [[ ! -f "$file" ]]; then
+    msg-sub "Creating $file: "
+    run 'curl -s https://raw.githubusercontent.com/weibeld/sudoers/main/linux | DATE=$(date -Iseconds) envsubst | sudo tee '$file' >/dev/null'
+  else
+    msg-sub "$file already exists: "
+  fi
 else
   msg-sub "User is already root: "
 fi
@@ -208,5 +219,4 @@ ack-sub
 # - Grip
 
 msg "Done!"
-msg-sub "Logs in $LOG: "
-ack-sub
+msg-sub "See logs in $LOG\n"
