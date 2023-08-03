@@ -8,7 +8,8 @@
 #------------------------------------------------------------------------------#
 
 LOG=log-$(date '+%Y%m%d%H%M%S')-setup.log
-echo -e "# Created by setup.sh on $(date -Iseconds), see https://github.com/weibeld/linux-setup\n" >"$LOG"
+echo "# Source: https://github.com/weibeld/linux-setup" >>"$LOG"
+echo -e "# Created on: $(date -Iseconds)\n" >>"$LOG"
 
 #------------------------------------------------------------------------------#
 # Functions
@@ -124,6 +125,7 @@ packages=(
 curl
 dos2unix
 fzf
+gettext
 gifsicle
 git
 imagemagick
@@ -178,24 +180,17 @@ fi
 ack-sub
 
 #------------------------------------------------------------------------------#
-# Configure sudo
+# Install custom sudoers file
 #------------------------------------------------------------------------------#
 
-# TODO: put file in repo and download here (add comments in current /etc/sudoers.d/settings)
-#msg "Configuring sudo..."
-#if ! is-root; then
-#  msg-sub "Writing to /etc/sudoers.d/setup: "
-#run 'cat <<EOF | sudo tee /etc/sudoers.d/setup >/dev/null
-#Defaults:$USER !authenticate
-#Defaults !secure_path
-#Defaults env_keep += HOME
-#Defaults env_keep += EDITOR
-#Defaults env_keep += "http_proxy https_proxy no_proxy"
-#EOF'
-#else
-#  msg-sub "User is already root: "
-#fi
-#ack-sub
+msg "Installing custom sudoers file..."
+if ! is-root; then
+  msg-sub "Creating /etc/sudoers.d/config: "
+  run 'curl -s https://raw.githubusercontent.com/weibeld/sudoers/main/linux | DATE=$(date -Iseconds) envsubst | sudo tee /etc/sudoers.d/config >/dev/null'
+else
+  msg-sub "User is already root: "
+fi
+ack-sub
 
 #------------------------------------------------------------------------------#
 # Install optional specialised tools
@@ -211,3 +206,7 @@ ack-sub
 # - Azure CLI
 # - Google Cloud CLI
 # - Grip
+
+msg "Done!"
+msg-sub "Logs in $LOG: "
+ack-sub
