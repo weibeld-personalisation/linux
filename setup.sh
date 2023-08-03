@@ -3,9 +3,12 @@
 # Exit on first error
 #set -e
 
-# Log file for all output
-LOG=setup.log
->"$LOG"
+#------------------------------------------------------------------------------#
+# Log file
+#------------------------------------------------------------------------------#
+
+LOG=log-$(date '+%Y%m%d%H%M%S')-setup.log
+echo -e "# Created by setup.sh on $(date -Iseconds), see https://github.com/weibeld/linux-setup\n" >"$LOG"
 
 #------------------------------------------------------------------------------#
 # Functions
@@ -51,6 +54,10 @@ is-root() { [[ "$UID" = 0 ]]; }
 run() { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
 run-root() { is-root && run "$*" || run "sudo $*"; }
 run-apt() { run-root apt -o Acquire::http::Timeout=5 -o APT::Update::Error-Mode=any -o APT::Get::Assume-Yes=true "$@"; }
+
+#------------------------------------------------------------------------------#
+# Banner
+#------------------------------------------------------------------------------#
 
 msg-bare "+------------------------------------+\n" cyan
 msg-bare "| Welcome to the Linux setup script! |\n" cyan
