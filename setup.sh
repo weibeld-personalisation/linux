@@ -110,6 +110,8 @@ elif ! is-installed apt; then
 fi
 ack-sub
 
+# TODO: check internet access with and without sudo (use dpkg or apt which are guaranteed to be installed)
+
 #------------------------------------------------------------------------------#
 # Get user password for root access
 #------------------------------------------------------------------------------#
@@ -185,7 +187,7 @@ msg "Installing dotfiles (https://github.com/weibeld/dotfiles)..."
 if [[ ! -d ~/.dotfiles ]]; then
   msg-sub "Running install script: "
   # TODO: improve installation script to work from any directory
-  run '(cd "$HOME" && bash -c "$(curl -Ls https://bit.ly/get-my-dotfiles)")'
+  run '(cd "$HOME" && bash -c "$(curl -Lks https://bit.ly/get-my-dotfiles)")'
   # TODO: delete backup directory
 else
   msg-sub "Dotfiles already installed: "
