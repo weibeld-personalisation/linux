@@ -149,7 +149,7 @@ packages=(
   lsb-release
   neovim
   net-tools
-  netcat
+  netcat-openbsd
   python-is-python3
   python3
   python3-pip
