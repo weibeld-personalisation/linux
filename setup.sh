@@ -153,6 +153,7 @@ packages=(
   neovim
   net-tools
   netcat-openbsd
+  pipx
   python-is-python3
   python3
   python3-pip
@@ -258,7 +259,8 @@ add-debian-repo() {
 # Grip |
 #------#
 install-grip() {
-  run pip install grip;
+  # Use pipx to avoid "error: externally-managed-environment" on Debian 12
+  run pipx install grip;
   run mkdir -p ~/.config/grip
   run '{ echo "TODO-ADD-GITHUB-PERSONAL-ACCESS-TOKEN-NO-SCOPES" >~/.config/grip/personal-access-token; }'
 }
