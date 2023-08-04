@@ -140,6 +140,7 @@ msg "Installing packages..."
 
 packages=(
   curl
+  dnsutils
   dos2unix
   fzf
   gettext
