@@ -159,6 +159,7 @@ packages=(
   python3
   python3-pip
   ripgrep
+  tmux
   traceroute
   tree
   unzip
