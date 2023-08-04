@@ -149,6 +149,7 @@ packages=(
   iputils-ping
   jq
   lsb-release
+  man
   neovim
   net-tools
   netcat-openbsd
