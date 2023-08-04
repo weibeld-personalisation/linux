@@ -95,6 +95,7 @@ fi
 ack-sub
 
 # Must have root access
+# TODO: split and have different message for both cases
 msg-sub "Has 'sudo' installed or is root: "
 if ! is-installed sudo && ! is-root; then
   err "The 'sudo' command is not installed and the script is not run as root: can't provide root access"
@@ -189,8 +190,7 @@ msg "Installing dotfiles (https://github.com/weibeld/dotfiles)..."
 if [[ ! -d ~/.dotfiles ]]; then
   msg-sub "Running install script: "
   # TODO: improve installation script to work from any directory
-  run '(cd "$HOME" && bash -c "$(curl -Lks https://bit.ly/get-my-dotfiles)")'
-  # TODO: delete backup directory
+  run '(cd "$HOME" && bash -c "$(curl -Lks https://bit.ly/get-my-dotfiles)" && rm -rf ~/.dotfiles.backup)'
 else
   msg-sub "Dotfiles already installed: "
 fi
