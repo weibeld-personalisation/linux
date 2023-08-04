@@ -56,7 +56,8 @@ is-root() { [[ "$UID" = 0 ]]; }
 has-cached-sudo-password() { sudo -n true 2>/dev/null; }
 run() { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
 run-pipe() { eval "$*" | tee -a "$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
-run-root() { is-root && run "$*" || run "sudo $*"; }
+# TODO: pass http_proxy, https_proxy, and no_proxy variables to sudo to make it work from the beginning for systems that use a proxy
+run-root() { is-root && run "$*" || run "sudo http_proxy=$http_proxy https_proxy=$https_proxy no_proxy=$no_proxy $*"; }
 run-apt() { run-root apt -o Acquire::http::Timeout=5 -o APT::Update::Error-Mode=any -o APT::Get::Assume-Yes=true "$@"; }
 input() { read in; __print "$in\n"; }
 get-distro-codename() { lsb_release -cs; }
