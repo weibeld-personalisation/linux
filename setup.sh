@@ -58,7 +58,9 @@ run() { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"
 run-pipe() { eval "$*" | tee -a "$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
 run-root() { is-root && run "$*" || run "sudo $*"; }
 run-apt() { run-root apt -o Acquire::http::Timeout=5 -o APT::Update::Error-Mode=any -o APT::Get::Assume-Yes=true "$@"; }
-get-input() { read in; __print "$in\n"; }
+input() { read in; __print "$in\n"; }
+get-distro-codename() { lsb_release -cs; }
+get-arch() { dpkg --print-architecture; }
 
 #------------------------------------------------------------------------------#
 # Banner
@@ -117,7 +119,7 @@ if ! is-root; then
     msg-sub "Please enter your user password:\n"
     sudo true
   else
-    msg-sub "Sudo password already cached or not needed: "
+    msg-sub "Sudo password cached or not needed: "
     # Extend validity of cached password to prevent expiration in this script
     sudo -v
   fi
@@ -162,7 +164,7 @@ msg-sub "Updating package lists: "
 run-apt update
 ack-sub
 for p in "${packages[@]}"; do
-  # TODO: check if package is already installed, similar to the optional tools
+  # TODO: check if package is already installed, similar to the optional tools: dpkg -l <package> &>/dev/null
   msg-sub "Installing '$p': "
   run-apt install "$p"
   ack-sub
@@ -211,6 +213,14 @@ ack-sub
 # Optional tools
 #------------------------------------------------------------------------------#
 
+#------------------------------------------------------------------------------#
+# Steps to add a new tool to this script:
+#   1. Add name of the tool to the 'tools' array
+#   2. Add an 'install-*' and 'is-installed-*' function
+#      - Suffix must be the result of 'tool-to-id "<Tool Name>"'
+#------------------------------------------------------------------------------#
+
+# Available tools
 tools=(
   Grip
   Go
@@ -222,116 +232,162 @@ tools=(
   "Google Cloud CLI"
 )
 
-is-tool-installed() {
-  case "$1" in
-    Grip) is-installed grip ;;
-    Go) is-installed go ;;
-    Terraform) is-installed terraform ;;
-    Docker) is-installed docker ;;
-    kubectl) is-installed kubectl ;;
-    "AWS CLI") is-installed aws ;;
-    "Azure CLI") is-installed az ;;
-    "Google Cloud CLI") is-installed gcloud ;;
-    *) err "Unknown tool: $1"
-  esac
+# Convert a tool name to a normalised identifier (e.g. "AWS CLI" => "aws-cli")
+tool-to-id() {
+  echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-zA-Z0-9]/-/g'
 }
 
-# Convert a tool name to a corresponding installation function name
-function-name() {
-  echo "install-$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-zA-Z0-9]/-/g')"
-}
-
-__get-distro-codename() { lsb_release -cs; }
-__get-arch() { dpkg --print-architecture; }
-__add-debian-repo() {
+# Add a custom Debian repository (including the signing GPG key)
+add-debian-repo() {
   key_url=$1
-  key_file=$2
-  repo_url=$3
+  repo_url=$2
+  key_file=$3
   repo_file=$4
   repo_distro=$5
   repo_comp1=$6
   run-pipe curl -fsSL "$key_url" | run-root gpg --yes --dearmor -o "$key_file"
-  run-pipe echo "deb [arch=$(__get-arch) signed-by=$key_file] $repo_url $repo_distro $repo_comp1" | run-root tee "$repo_file"
+  # See format here: https://wiki.debian.org/DebianRepository/Format
+  run-pipe echo "deb [arch=$(get-arch) signed-by=$key_file] $repo_url $repo_distro $repo_comp1" | run-root tee "$repo_file"
 }
 
+#------#
+# Grip |
+#------#
 install-grip() {
-  run "pip install grip"
+  run pip install grip;
+  run mkdir -p ~/.config/grip
+  run '{ echo "TODO-ADD-GITHUB-PERSONAL-ACCESS-TOKEN-NO-SCOPES" >~/.config/grip/personal-access-token; }'
 }
+is-installed-grip() { is-installed grip; }
 
-install-go() {
-  run-apt "install golang"
-}
+#----#
+# Go |
+#----#
+install-go() { run-apt install golang; }
+is-installed-go() { is-installed go; }
 
+#-----------#
+# Terraform |
+#-----------#
 install-terraform() {
-  __add-debian-repo \
-      https://apt.releases.hashicorp.com/gpg \
-      /usr/share/keyrings/hashicorp-archive-keyring.gpg \
-      https://apt.releases.hashicorp.com \
-      /etc/apt/sources.list.d/hashicorp.list \
-      $(__get-distro-codename) \
-      main
+  # https://developer.hashicorp.com/terraform/downloads
+  add-debian-repo \
+    https://apt.releases.hashicorp.com/gpg \
+    https://apt.releases.hashicorp.com \
+    /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+    /etc/apt/sources.list.d/hashicorp.list \
+    $(get-distro-codename) \
+    main
   run-apt update
   run-apt install terraform
+  # Completion: set up by .bashrc in dotfiles
 }
+is-installed-terraform() { is-installed terraform; }
 
+#--------#
+# Docker |
+#--------#
 install-docker() {
-  __add-debian-repo \
-      https://download.docker.com/linux/ubuntu/gpg \
-      /etc/apt/keyrings/docker.gpg \
-      https://download.docker.com/linux/ubuntu \
-      /etc/apt/sources.list.d/docker.list \
-      $(__get-distro-codename) \
-      stable
+  # https://docs.docker.com/engine/install/ubuntu/
+  add-debian-repo \
+    https://download.docker.com/linux/ubuntu/gpg \
+    https://download.docker.com/linux/ubuntu \
+    /etc/apt/keyrings/docker.gpg \
+    /etc/apt/sources.list.d/docker.list \
+    $(get-distro-codename) \
+    stable
   run-apt update
   run-apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  # Allow current user to use Docker without sudo
   if ! is-root; then
     run-root usermod -aG docker "$USER"
     newgrp docker
   fi
+  # Completion: package installation drops script in /usr/share/bash-completion/completions
 }
+is-installed-docker() { is-installed docker; }
 
+#---------#
+# kubectl |
+#---------#
 install-kubectl() {
-#  curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-#
-#  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-#
-#  # Install the kubectl package
-#  run-apt update
-#  run-apt install kubectl
-#
-#  # Install command completion
-#  # https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#enable-kubectl-autocompletion
-#  kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl >/dev/null
+  # https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
+  add-debian-repo \
+    https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+    https://apt.kubernetes.io/ \
+    /etc/apt/keyrings/kubernetes-archive-keyring.gpg \
+    /etc/apt/sources.list.d/kubernetes.list \
+    kubernetes-xenial \
+    main
+  run-apt update
+  run-apt install kubectl
+  # Completion
+  run-pipe kubectl completion bash | run-root tee /etc/bash_completion.d/kubectl >/dev/null;
 }
+is-installed-kubectl() { is-installed kubectl; }
 
+#-----------#
+# Azure CLI |
+#-----------#
+# https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux
 install-azure-cli() {
-#  curl -sLS https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/microsoft.gpg >/dev/null
-#  #sudo chmod go+r /etc/apt/keyrings/microsoft.gpg
-#
-#  # Add the Azure CLI Debian repository
-#  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
-#
-#  # Install the Azure CLI package
-#  run-apt update
-#  run-apt install azure-cli
+  add-debian-repo \
+    https://packages.microsoft.com/keys/microsoft.asc \
+    https://packages.microsoft.com/repos/azure-cli/ \
+    /etc/apt/keyrings/microsoft.gpg \
+    /etc/apt/sources.list.d/azure-cli.list
+    $(get-distro-codename) \
+    main
+  run-apt update
+  run-apt install azure-cli
+  # Completion: package installation drops script in /etc/bash_completion.d
 }
+is-installed-azure-cli() { is-installed az; }
+
+#---------#
+# AWS CLI |
+#---------#
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+install-aws-cli() {
+  run curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+  run unzip -q awscliv2.zip
+  run-root ./aws/install
+  run rm -rf aws awscliv2.zip
+  # Completion: set up by .bashrc in dotfiles
+}
+is-installed-aws-cli() { is-installed aws; }
+
+#------------------#
+# Google Cloud CLI |
+#------------------#
+# https://cloud.google.com/sdk/docs/install-sdk#linux
+install-google-cloud-cli() {
+  run curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-440.0.0-linux-x86_64.tar.gz -o ~/google-cloud-cli.tar.gz
+  # Creates ~/google-cloud-sdk 
+  run tar -xf ~/google-cloud-cli.tar.gz
+  run rm ~/google-cloud-cli.tar.gz
+  # Completion
+  run-root cp ~/google-cloud-sdk/completion.bash.inc /etc/bash_completion.d/google-cloud-cli
+  # PATH: ~/google-cloud-sdk/bin is added to PATH by .bashrc in dotfiles
+}
+is-installed-google-cloud-cli() { is-installed gcloud; }
 
 #------------------------------------------------------------------------------#
-# Select optional tools to install
+# Select tools to install
 #------------------------------------------------------------------------------#
 
 msg "Select tools to install..."
 tool-selection-dialog() {
 
   # Tools selected for installation
-  tools_install=()
+  selected=()
 
   # Read answers from user
   msg-sub "Select tools: [y]es (default), [n]o, [s]top\n"
   for t in "${tools[@]}"; do
     msg-sub "$t: "
-    case "$(get-input)" in
-      y*|Y*|"") tools_install+=("$t") ;;
+    case "$(input)" in
+      y*|Y*|"") selected+=("$t") ;;
       s*|S*) break ;;
       n*|N*|*) ;;
     esac
@@ -339,10 +395,10 @@ tool-selection-dialog() {
 
   # Review selected tools
   msg-sub "Selected tools:"
-  if [[ "${#tools_install[@]}" -gt 0 ]]; then
+  if [[ "${#selected[@]}" -gt 0 ]]; then
     msg-bare "\n"
     ((i=1))
-    for t in "${tools_install[@]}"; do
+    for t in "${selected[@]}"; do
       msg-sub-sub "$i. $t\n"
       ((i++))
     done
@@ -352,7 +408,7 @@ tool-selection-dialog() {
 
   # Proceed to installation or repeat selection
   msg-sub "Proceed to installation? [y]es (default), [n]o: "
-  case "$(get-input)" in
+  case "$(input)" in
     y*|Y*|"") ;;
     n*|N*|*) tool-selection-dialog ;;
   esac
@@ -361,15 +417,15 @@ tool-selection-dialog() {
 tool-selection-dialog
 
 #------------------------------------------------------------------------------#
-# Install selected optional tools
+# Install selected tools
 #------------------------------------------------------------------------------#
 
 msg "Installing selected tools..."
 
-for t in "${tools_install[@]}"; do
-  if ! is-tool-installed "$t"; then
+for t in "${selected[@]}"; do
+  if ! is-installed-"$(tool-to-id "$t")"; then
     msg-sub "Installing $t: "
-    eval "$(function-name "$t")"
+    install-"$(tool-to-id "$t")"
   else
     msg-sub "$t is already installed: "
   fi
