@@ -94,7 +94,6 @@ fi
 ack-sub
 
 # Must have root access
-# TODO: split and have different message for both cases
 msg-sub "Has 'sudo' installed or is root: "
 if ! is-installed sudo && ! is-root; then
   err "The 'sudo' command is not installed and the script is not run as root: can't provide root access"
@@ -281,8 +280,8 @@ is-installed-go() { is-installed go; }
 #-----------#
 # Terraform |
 #-----------#
+# See: https://developer.hashicorp.com/terraform/downloads
 install-terraform() {
-  # https://developer.hashicorp.com/terraform/downloads
   add-debian-repo \
     https://apt.releases.hashicorp.com/gpg \
     https://apt.releases.hashicorp.com \
@@ -299,8 +298,10 @@ is-installed-terraform() { is-installed terraform; }
 #--------#
 # Docker |
 #--------#
+# See:
+#   - https://docs.docker.com/engine/install/debian/
+#   - https://docs.docker.com/engine/install/ubuntu/
 install-docker() {
-  # https://docs.docker.com/engine/install/ubuntu/
   add-debian-repo \
     https://download.docker.com/linux/ubuntu/gpg \
     https://download.docker.com/linux/ubuntu \
@@ -322,8 +323,8 @@ is-installed-docker() { is-installed docker; }
 #---------#
 # kubectl |
 #---------#
+# See: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
 install-kubectl() {
-  # https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
   add-debian-repo \
     https://packages.cloud.google.com/apt/doc/apt-key.gpg \
     https://apt.kubernetes.io/ \
@@ -341,13 +342,13 @@ is-installed-kubectl() { is-installed kubectl; }
 #-----------#
 # Azure CLI |
 #-----------#
-# https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux
+# See: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux
 install-azure-cli() {
   add-debian-repo \
     https://packages.microsoft.com/keys/microsoft.asc \
     https://packages.microsoft.com/repos/azure-cli/ \
     /etc/apt/keyrings/microsoft.gpg \
-    /etc/apt/sources.list.d/azure-cli.list
+    /etc/apt/sources.list.d/azure-cli.list \
     $(get-distro-codename) \
     main
   run-apt update
@@ -359,7 +360,7 @@ is-installed-azure-cli() { is-installed az; }
 #---------#
 # AWS CLI |
 #---------#
-# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+# See: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 install-aws-cli() {
   run curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
   run unzip -q awscliv2.zip
