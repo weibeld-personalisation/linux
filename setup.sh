@@ -263,6 +263,7 @@ add-debian-repo() {
 #------#
 # Grip |
 #------#
+# See https://github.com/joeyespo/grip#installation
 install-grip() {
   # Use pipx to avoid "error: externally-managed-environment" on Debian 12
   run pipx install grip;
@@ -316,7 +317,7 @@ install-docker() {
     run-root usermod -aG docker "$USER"
     newgrp docker
   fi
-  # Completion: package installation drops script in /usr/share/bash-completion/completions
+  # Completion: package adds script to /usr/share/bash-completion/completions
 }
 is-installed-docker() { is-installed docker; }
 
@@ -353,7 +354,7 @@ install-azure-cli() {
     main
   run-apt update
   run-apt install azure-cli
-  # Completion: package installation drops script in /etc/bash_completion.d
+  # Completion: package adds completion script to /etc/bash_completion.d
 }
 is-installed-azure-cli() { is-installed az; }
 
@@ -373,15 +374,18 @@ is-installed-aws-cli() { is-installed aws; }
 #------------------#
 # Google Cloud CLI |
 #------------------#
-# https://cloud.google.com/sdk/docs/install-sdk#linux
+# https://cloud.google.com/sdk/docs/install-sdk#deb
 install-google-cloud-cli() {
-  run curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-440.0.0-linux-x86_64.tar.gz -o ~/google-cloud-cli.tar.gz
-  # Creates ~/google-cloud-sdk 
-  run tar -xf ~/google-cloud-cli.tar.gz
-  run rm ~/google-cloud-cli.tar.gz
-  # Completion
-  run-root cp ~/google-cloud-sdk/completion.bash.inc /etc/bash_completion.d/google-cloud-cli
-  # PATH: ~/google-cloud-sdk/bin is added to PATH by .bashrc in dotfiles
+  add-debian-repo \
+    https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+    https://packages.cloud.google.com/apt \
+    /usr/share/keyrings/cloud.google.gpg \
+    /etc/apt/sources.list.d/google-cloud-sdk.list \
+    cloud-sdk \
+    main
+  run-apt update
+  run-apt install google-cloud-cli
+  # Completion: package adds link to script to /etc/bash_completion.d
 }
 is-installed-google-cloud-cli() { is-installed gcloud; }
 
