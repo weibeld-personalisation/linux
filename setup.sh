@@ -111,7 +111,7 @@ ack-sub
 
 # Must have internet connectivity
 msg-sub "Has internet access: "
-if ! cat </dev/null >/dev/tcp/8.8.8.8/53; then
+if ! timeout 5 cat </dev/null >/dev/tcp/8.8.8.8/53; then
   err "No internet access detected"
 fi
 ack-sub
