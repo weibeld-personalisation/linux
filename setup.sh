@@ -142,6 +142,7 @@ ack-sub
 msg "Installing packages..."
 
 packages=(
+  bash-completion
   curl
   dnsutils
   dos2unix
@@ -302,6 +303,10 @@ is-installed-terraform() { is-installed terraform; }
 # See:
 #   - https://docs.docker.com/engine/install/debian/
 #   - https://docs.docker.com/engine/install/ubuntu/
+#   - https://docs.docker.com/engine/install/#other-linux-distros
+# TODO: determine OS (Ubuntu or Debian) and adapt code accordingly. Derivatives
+#   of Ubuntu or Debian have to be treated as Ubuntu and Debian, respectively
+#   (see https://docs.docker.com/engine/install/#other-linux-distros)
 install-docker() {
   add-debian-repo \
     https://download.docker.com/linux/ubuntu/gpg \
