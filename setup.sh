@@ -326,8 +326,9 @@ install-docker() {
   run-apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   # Allow current user to use Docker without sudo
   if ! is-root; then
+    # Requires logout and login to take effect (do not use newgrp as it starts
+    # a new shell and terminates the script)
     run-root usermod -aG docker "$USER"
-    newgrp docker
   fi
   # Completion: package adds script to /usr/share/bash-completion/completions
 }
@@ -467,3 +468,4 @@ done
 
 msg "Done!"
 msg-sub "See logs in $LOG\n"
+msg-sub "In order for all settings to take effect, log out and in again now!\n"
