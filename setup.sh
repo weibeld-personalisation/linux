@@ -52,6 +52,7 @@ msg-sub-sub() { __print "        $1"; }
 msg-bare() { __print "$1" "$2"; }
 err() { __print "ERROR\n$1\n" red; exit 1; }
 is-installed() { which "$1" &>/dev/null; }
+is-package-installed() { dpkg -l "$1" &>/dev/null; }
 is-root() { [[ "$UID" = 0 ]]; }
 has-cached-sudo-password() { sudo -n true 2>/dev/null; }
 run() { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
@@ -176,9 +177,12 @@ msg-sub "Updating package lists: "
 run-apt update
 ack-sub
 for p in "${packages[@]}"; do
-  # TODO: check if package is already installed, similar to the optional tools: dpkg -l <package> &>/dev/null
-  msg-sub "Installing '$p': "
-  run-apt install "$p"
+  if ! is-package-installed "$p"; then
+    msg-sub "Installing '$p': "
+    run-apt install "$p"
+  else
+    msg-sub "'$p' is already installed: "
+  fi
   ack-sub
 done
 msg-sub "Cleaning packages: "
@@ -467,4 +471,4 @@ done
 
 msg "Done!"
 msg-sub "See logs in $LOG\n"
-msg-sub "In order for all settings to take effect, log out and in again now!\n"
+msg-sub "Sign out and in again in order for all settings to be applied!\n"
