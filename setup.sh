@@ -61,6 +61,7 @@ run-apt() { run-root apt -o Acquire::http::Timeout=5 -o APT::Update::Error-Mode=
 input() { read in; __print "$in\n"; }
 get-distro-codename() { lsb_release -cs; }
 get-arch() { dpkg --print-architecture; }
+get-os() { (. /etc/os-release; echo "$ID" ) }
 
 #------------------------------------------------------------------------------#
 # Banner
@@ -228,7 +229,7 @@ ack-sub
 # Steps to add a new tool to this script:
 #   1. Add name of the tool to the 'tools' array
 #   2. Add an 'install-*' and 'is-installed-*' function
-#      - Suffix must be the result of 'tool-to-id "<Tool Name>"'
+#      - Suffix must be the result of 'name-to-id "<Tool Name>"'
 #------------------------------------------------------------------------------#
 
 # Available tools
@@ -244,7 +245,7 @@ tools=(
 )
 
 # Convert a tool name to a normalised identifier (e.g. "AWS CLI" => "aws-cli")
-tool-to-id() {
+name-to-id() {
   echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-zA-Z0-9]/-/g'
 }
 
@@ -300,17 +301,23 @@ is-installed-terraform() { is-installed terraform; }
 #--------#
 # Docker |
 #--------#
-# See:
-#   - https://docs.docker.com/engine/install/debian/
-#   - https://docs.docker.com/engine/install/ubuntu/
-#   - https://docs.docker.com/engine/install/#other-linux-distros
-# TODO: determine OS (Ubuntu or Debian) and adapt code accordingly. Derivatives
-#   of Ubuntu or Debian have to be treated as Ubuntu and Debian, respectively
-#   (see https://docs.docker.com/engine/install/#other-linux-distros)
+# See: https://docs.docker.com/engine/install/
 install-docker() {
-  add-debian-repo \
-    https://download.docker.com/linux/ubuntu/gpg \
-    https://download.docker.com/linux/ubuntu \
+  local os=$(get-os)
+  case "$os" in
+    # See https://docs.docker.com/engine/install/ubuntu/
+    ubuntu)
+      local key_url=https://download.docker.com/linux/ubuntu/gpg
+      local repo_url=https://download.docker.com/linux/ubuntu
+      ;;
+    # See https://docs.docker.com/engine/install/debian/
+    debian)
+      local key_url=https://download.docker.com/linux/debian/gpg
+      local repo_url=https://download.docker.com/linux/debian
+      ;;
+    *) err "Unknown OS: $os" ;;
+  esac
+  add-debian-repo "$key_url" "$repo_url" \
     /etc/apt/keyrings/docker.gpg \
     /etc/apt/sources.list.d/docker.list \
     $(get-distro-codename) \
@@ -445,9 +452,9 @@ tool-selection-dialog
 msg "Installing selected tools..."
 
 for t in "${selected[@]}"; do
-  if ! is-installed-"$(tool-to-id "$t")"; then
+  if ! is-installed-"$(name-to-id "$t")"; then
     msg-sub "Installing $t: "
-    install-"$(tool-to-id "$t")"
+    install-"$(name-to-id "$t")"
   else
     msg-sub "$t is already installed: "
   fi
