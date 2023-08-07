@@ -84,13 +84,12 @@ if [[ ! -f /etc/debian_version ]]; then
 fi
 ack-sub
 
-# Must be run with Bash and Bash version must be at least 4.0
-msg-sub "Is executed with Bash >= 4.0: "
+# Must be run with Bash (tested with Bash 4.0, not clear what's the actual
+# minimum version, but shouldn't be a problem, Bash 4.0 was released in 2009)
+msg-sub "Is executed with Bash: "
 shell=$(readlink /proc/"$$"/exe)
 if [[ ! "$shell" =~ /bash$ ]]; then
   err "This script must be executeed with Bash (currently being executed with $shell)"
-elif [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
-  err "Bash version must be 4.0 or newer (current Bash version is $BASH_VERSION)"
 fi
 ack-sub
 
