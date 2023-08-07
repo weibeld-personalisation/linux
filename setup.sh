@@ -19,8 +19,8 @@ echo -e "# Created on: $(date -Iseconds)\n" >>"$LOG"
 # Usage:
 #   __print str [col]
 # Args:
-#   str:  the string to print
-#   col:  an optional colour, accepted values are: 'red', 'green', 'cyan'
+#   str: the string to print
+#   col: optional colour, accepted values are: 'red', 'green', 'cyan', 'dimmed'
 # Notes:
 #   - If the 'col' argument is omitted, then no colour is applied
 #   - The colour is only applied to text printed to stdout, not the log file
@@ -34,6 +34,7 @@ __print() {
     red) local col_code=$(echo -e '\e[1;31m') ;;
     green) local col_code=$(echo -e '\e[1;32m') ;;
     cyan) local col_code=$(echo -e '\e[1;36m') ;;
+    dimmed) local col_code=$(echo -e '\e[2m') ;;
     *) unset col_name ;;
   esac
   printf -- "$str" >>"$LOG"
@@ -46,7 +47,7 @@ __print() {
 
 msg() { __print "\n==> $1\n" cyan; }
 ack() { __print "    OK\n" green; }
-msg-sub() { __print "    - $1"; }
+msg-sub() { __print "    - $1" "$2"; }
 ack-sub() { __print "OK\n" green; }
 msg-sub-sub() { __print "        $1"; }
 msg-bare() { __print "$1" "$2"; }
@@ -132,7 +133,7 @@ if ! is-root; then
     sudo -v
   fi
 else
-  msg-sub "User is already root: "
+  msg-sub "User is already root: " dimmed
 fi
 ack-sub
 
@@ -181,7 +182,7 @@ for p in "${packages[@]}"; do
     msg-sub "Installing '$p': "
     run-apt install "$p"
   else
-    msg-sub "'$p' is already installed: "
+    msg-sub "'$p' is already installed: " dimmed
   fi
   ack-sub
 done
@@ -202,7 +203,7 @@ if [[ ! -d ~/.dotfiles ]]; then
   # TODO: improve installation script to work from any directory
   run '(cd "$HOME" && bash -c "$(curl -Lks https://bit.ly/get-my-dotfiles)" && rm -rf ~/.dotfiles.backup)'
 else
-  msg-sub "Dotfiles already installed: "
+  msg-sub "Dotfiles already installed: " dimmed
 fi
 ack-sub
 
@@ -217,10 +218,10 @@ if ! is-root; then
     msg-sub "Creating $file: "
     run 'curl -s https://raw.githubusercontent.com/weibeld/sudoers/main/linux | DATE=$(date -Iseconds) envsubst | sudo tee '$file' >/dev/null'
   else
-    msg-sub "Sudoers already configured: "
+    msg-sub "Sudoers already configured: " dimmed
   fi
 else
-  msg-sub "Skipping because user is root: "
+  msg-sub "Skipping because user is root: " dimmed
 fi
 ack-sub
 
@@ -273,7 +274,7 @@ install-grip() {
   # Use pipx to avoid "error: externally-managed-environment" on Debian 12
   run pipx install grip;
   run mkdir -p ~/.config/grip
-  run '{ echo "TODO-ADD-GITHUB-PERSONAL-ACCESS-TOKEN-NO-SCOPES" >~/.config/grip/personal-access-token; }'
+  run '{ echo "TODO-ADD-READ-ONLY-GITHUB-PERSONAL-ACCESS-TOKEN" >~/.config/grip/personal-access-token; }'
 }
 is-installed-grip() { is-installed grip; }
 
@@ -460,7 +461,7 @@ for t in "${selected[@]}"; do
     msg-sub "Installing $t: "
     install-"$(name-to-id "$t")"
   else
-    msg-sub "$t is already installed: "
+    msg-sub "$t is already installed: " dimmed
   fi
   ack-sub
 done
