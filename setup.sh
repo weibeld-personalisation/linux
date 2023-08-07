@@ -89,7 +89,7 @@ ack-sub
 msg-sub "Is executed with Bash: "
 shell=$(readlink /proc/"$$"/exe)
 if [[ ! "$shell" =~ /bash$ ]]; then
-  err "This script must be executeed with Bash (currently being executed with $shell)"
+  err "This script must be executed with Bash (currently being executed with $shell)"
 fi
 ack-sub
 
@@ -206,17 +206,17 @@ ack-sub
 # Install custom sudoers file
 #------------------------------------------------------------------------------#
 
-msg "Installing custom sudoers file..."
+msg "Configuring sudoers..."
 if ! is-root; then
   file=/etc/sudoers.d/config
   if [[ ! -f "$file" ]]; then
     msg-sub "Creating $file: "
     run 'curl -s https://raw.githubusercontent.com/weibeld/sudoers/main/linux | DATE=$(date -Iseconds) envsubst | sudo tee '$file' >/dev/null'
   else
-    msg-sub "$file already exists: "
+    msg-sub "Sudoers already configured: "
   fi
 else
-  msg-sub "User is already root: "
+  msg-sub "Skipping because user is root: "
 fi
 ack-sub
 
