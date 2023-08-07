@@ -69,3 +69,12 @@ If the script is executed as root, then no setup for non-root users will be done
 ### Bash version
 
 There's no clear minimum version of Bash that is required to run the script. However, the script has been tested to work down to Bash 4.0, thus, the script should work with literally all Bash versions in use on current Linux systems (considering that Bash 4.0 is from 2009).
+
+## Support
+
+The script has so far been verified to work on the following systems:
+
+| System | Versions |
+|--------|----------|
+| Ubuntu | 22.04    |
+| Debian | 12       |
