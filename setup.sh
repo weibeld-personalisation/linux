@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+!/usr/bin/env bash
 
 # Exit on first error
 set -e
@@ -56,7 +56,7 @@ is-installed() { which "$1" &>/dev/null; }
 is-package-installed() { dpkg -l "$1" &>/dev/null; }
 is-root() { [[ "$UID" = 0 ]]; }
 has-cached-sudo-password() { sudo -n true 2>/dev/null; }
-run() { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
+run() { echo "+ $*" >>"$LOG"; { eval "$*" &>>"$LOG" || err "Command \"$*\" failed: see $LOG for details"; }; }
 run-pipe() { eval "$*" | tee -a "$LOG" || err "Command \"$*\" failed: see $LOG for details"; }
 run-root() { is-root && run "$*" || run "sudo http_proxy=$http_proxy https_proxy=$https_proxy no_proxy=$no_proxy $*"; }
 run-apt() { run-root apt -o Acquire::http::Timeout=5 -o APT::Update::Error-Mode=any -o APT::Get::Assume-Yes=true "$@"; }
