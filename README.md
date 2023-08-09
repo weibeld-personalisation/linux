@@ -30,6 +30,7 @@ The script performs the following setup:
    - [Terraform](https://www.terraform.io/)
    - [Docker](https://www.docker.com/)
    - [kubectl](https://kubernetes.io/docs/reference/kubectl/)
+   - [Helm](https://helm.sh/)
    - [AWS CLI](https://aws.amazon.com/cli/)
    - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/)
    - [Google Cloud CLI](https://cloud.google.com/cli)
