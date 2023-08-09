@@ -243,6 +243,7 @@ tools=(
   Terraform
   Docker
   kubectl
+  Helm
   "AWS CLI"
   "Azure CLI"
   "Google Cloud CLI"
@@ -353,9 +354,28 @@ install-kubectl() {
   run-apt update
   run-apt install kubectl
   # Completion
-  run-pipe kubectl completion bash | run-root tee /etc/bash_completion.d/kubectl >/dev/null;
+  run-pipe kubectl completion bash | run-root tee /etc/bash_completion.d/kubectl >/dev/null
 }
 is-installed-kubectl() { is-installed kubectl; }
+
+#------#
+# Helm |
+#------#
+# See: https://helm.sh/docs/intro/install/#from-apt-debianubuntu
+install-helm() {
+  add-debian-repo \
+    https://baltocdn.com/helm/signing.asc \
+    https://baltocdn.com/helm/stable/debian/ \
+    /usr/share/keyrings/helm.gpg \
+    /etc/apt/sources.list.d/helm-stable-debian.list \
+    all \
+    main
+  run-apt update
+  run-apt install helm
+  # Completion
+  run-pipe helm completion bash | run-root tee /usr/local/etc/bash_completion.d/helm >/dev/null
+}
+is-installed-helm() { is-installed helm; }
 
 #-----------#
 # Azure CLI |
